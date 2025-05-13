@@ -1,0 +1,25 @@
+# Lean build and cache
+/build
+/.lake
+/lean-cache
+/.lean_cache
+lake-manifest.json
+*.olean
+
+# Python venv
+manim_venv/
+
+# Manim media output
+media/
+
+# VSCode settings (optional)
+.vscode/
+
+# OS / Editor files
+*.DS_Store
+*.log
+*.aux
+*.toc
+*.out
+*.pyc
+__pycache__/
