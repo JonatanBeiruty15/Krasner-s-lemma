@@ -203,14 +203,7 @@ PAdicNormExt x = PAdicNormExt (σ (⟨x, hx⟩) : Q_p_bar p) := by
 
 
 
--- main lemma we want to prove that a belongs to ℚ_p(b).
 
---0. assume that a ∉ K.
---1. [K(a),K] > 1 --> ∃ c ≠ a Galois conj of a.  h1
---2. ∃ σ : K(a) --> K(c) isom s.t K is fixed, σ(a) = c (by  exists_isomorphism_to_conjugate).
---3. |σ(x)|_p = |x|p to all x in AlgebraicClosure(ℚ_p). (PAdicNormExt_iso_inv)
---4. |b-c|_p = |σ(b) - σ(a)|_p = |b-a|_p
---5. |c-a|_p ≤ max(|c-b|_p , |b-a|_p) = |b-a|_p < |c-a|_p --->contradiction
 
 open IntermediateField
 variable {F K : Type*} [Field F] [Field K] [Algebra F K]
@@ -261,10 +254,27 @@ theorem PAdicNormExt_big_iso_inv {p : ℕ}[Fact (Nat.Prime p)](K : IntermediateF
 
 
 
---Jonatan
+
+
+
+-- main lemma we want to prove that a belongs to ℚ_p(b).
+
+--0. assume that a ∉ K.
+--1. [K(a),K] > 1 --> ∃ c ≠ a Galois conj of a.  h1
+--2. ∃ σ : K(a) --> K(c) isom s.t K is fixed, σ(a) = c (by  exists_isomorphism_to_conjugate).
+--3. |σ(x)|_p = |x|p to all x in AlgebraicClosure(ℚ_p). (PAdicNormExt_iso_inv)
+--4. |b-c|_p = |σ(b) - σ(a)|_p = |b-a|_p
+--5. |c-a|_p ≤ max(|c-b|_p , |b-a|_p) = |b-a|_p < |c-a|_p --->contradiction
+
+
+
+
+
+
 lemma lemma_main {p : ℕ}[Fact (Nat.Prime p)](a b : AlgebraicClosure ℚ_[p])
 (h : ∀ (x : AlgebraicClosure ℚ_[p]), a ≠ x ∧ IsConjRoot ℚ_[p] a x → PAdicNormExt (b - a) < PAdicNormExt (x - a)) :
 a ∈ adjoin ℚ_[p] ({b} : Set (AlgebraicClosure ℚ_[p])) := by
+  --proving by contradiction
   by_contra h0
 
   let K : IntermediateField ℚ_[p] (AlgebraicClosure ℚ_[p]) := adjoin ℚ_[p] ({b} : Set (AlgebraicClosure ℚ_[p]))
@@ -273,11 +283,8 @@ a ∈ adjoin ℚ_[p] ({b} : Set (AlgebraicClosure ℚ_[p])) := by
 
   have h1 : ∃ (c : AlgebraicClosure ℚ_[p]), a ≠ c ∧ IsConjRoot K a c := conj_lemma K a h0
 
-
-
   obtain ⟨c, hc⟩ := h1
   rcases hc with ⟨c_ne_a, h_conj_in_K⟩
-
 
   let Kc : IntermediateField ℚ_[p] (AlgebraicClosure ℚ_[p]) := IntermediateField.adjoin ℚ_[p] ({b,c} : Set (AlgebraicClosure ℚ_[p]))
 
@@ -287,14 +294,14 @@ a ∈ adjoin ℚ_[p] ({b} : Set (AlgebraicClosure ℚ_[p])) := by
     (IsAlgebraic.isIntegral a_Algebraic)
     (IsConjRoot.aeval_eq_zero (IsConjRoot.of_isScalarTower (IsAlgebraic.isIntegral a_Algebraic) h_conj_in_K))
 
-
-  have h2_new : ∃ (σ : AlgebraicClosure ℚ_[p] ≃ₐ[K] AlgebraicClosure ℚ_[p]),
+  -- having an isom that sends a → c
+  have h2 : ∃ (σ : AlgebraicClosure ℚ_[p] ≃ₐ[K] AlgebraicClosure ℚ_[p]),
   σ a = c ∧ ∀ x ∈ K, σ x = x := sigma_isom K a c h_conj_in_K
 
-  obtain ⟨σ, ⟨h_sigma1, h_sigma_K⟩⟩ := h2_new
+  obtain ⟨σ, ⟨h_sigma1, h_sigma_K⟩⟩ := h2
 
 
-
+  --sigma fixes b (as it fixes K.)
   have sigma_b : σ (b) = b :=
     haveI b_in_K : b ∈ K := element_in_bigger_field ℚ_[p] b {b} (Set.mem_singleton b)
     h_sigma_K  b b_in_K
@@ -305,7 +312,7 @@ a ∈ adjoin ℚ_[p] ({b} : Set (AlgebraicClosure ℚ_[p])) := by
     rw [map_sub]
 
 
-  have r4 : PAdicNormExt (-(b - c)) = PAdicNormExt (c - b) := by
+  have neg_sub_norm : PAdicNormExt (-(b - c)) = PAdicNormExt (c - b) := by
     congr 1
     rw [neg_sub]
 
@@ -324,7 +331,7 @@ a ∈ adjoin ℚ_[p] ({b} : Set (AlgebraicClosure ℚ_[p])) := by
      _ = PAdicNormExt (b - (σ (a) : AlgebraicClosure ℚ_[p])) := by rw [sigma_b]
      _ = PAdicNormExt (b - c) := by rw [h_sigma1]
      _ = PAdicNormExt (-(b - c)) := PAdicNormExt_mult_minus (b-c)
-     _ = PAdicNormExt (c - b) := r4
+     _ = PAdicNormExt (c - b) := neg_sub_norm
 
 
   have max_is_b_sub_a : max (PAdicNormExt  (c - b)) (PAdicNormExt (b - a)) = PAdicNormExt (b - a) := by
@@ -340,5 +347,5 @@ a ∈ adjoin ℚ_[p] ({b} : Set (AlgebraicClosure ℚ_[p])) := by
     _ = PAdicNormExt (b - a) := max_is_b_sub_a
     _ < PAdicNormExt (c - a) := h c a_c_IsConj_in_Q_p
 
-
+  -- "score the goal"
   exact lt_irrefl _ h5
