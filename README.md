@@ -21,10 +21,5 @@ This repository contains formalization work and visualization materials from a L
 - [Lean 4](https://leanprover.github.io)
 - [Manim](https://docs.manim.community) (Python)
 
-## 🧪 How to Use
 
-1. Clone the repo:
-   ```bash
-   git clone https://github.com/yourusername/MyLeanProject.git
-   cd MyLeanProject
 
