@@ -1,6 +1,4 @@
-
 import Mathlib
-
 
 open IntermediateField Classical FiniteDimensional LinearMap LinearAlgebra
 
@@ -41,17 +39,35 @@ FiniteDimensional K (adjoin K ({x} : Set M)) := by
   have hint : IsIntegral K x := by exact IsAlgebraic.isIntegral hx
   exact adjoin.finiteDimensional hint
 
---Tower formula for dimension
-
 -- Extending norms
 noncomputable def NormExt (K M : Type*)[NormedField K][Field M][Algebra K M](L : IntermediateField K M)(x : M)(hx : x ∈ L) : ℝ :=
   ‖Algebra.norm K (⟨x, hx⟩ : L)‖^(1/(Module.finrank K L : ℝ))
 
 -- Extended norm is invariant of intermediate field
-lemma NormExt_field_inv_help {K M : Type*}[NormedField K][Field M][Algebra K M](L : IntermediateField K M)(N : IntermediateField K M)
-(hfinL : FiniteDimensional K L)(hfinN : FiniteDimensional K N)
-{x : M}(hLx : x ∈ L)(hNx : x ∈ N)(h : N ≤ L) : NormExt K M L x hLx = NormExt K M N x hNx := by
-  sorry
+lemma NormExt_field_inv_help {K M : Type*}[NormedField K][Field M][Algebra K M](L : IntermediateField K M)
+(hfinL : FiniteDimensional K L){x : M}(hLx : x ∈ L) : NormExt K M L x hLx = NormExt K M (adjoin K ({x} : Set M)) x
+(mem_adjoin_simple_self K x) := by
+  let Kx : IntermediateField K M := adjoin K ({x} : Set M)
+  have Kx_le_L : Kx ≤ L := by exact adjoin_simple_le_iff.mpr hLx
+  let inc : Kx →ₐ[K] L := inclusion Kx_le_L
+  haveI : Algebra Kx L := (inc.toRingHom).toAlgebra
+  haveI : IsScalarTower K Kx L := by
+    have h : algebraMap K L = (algebraMap Kx L).comp (algebraMap K Kx) := by sorry
+    exact IsScalarTower.of_algebraMap_eq' h
+  unfold NormExt
+  haveI : Module Kx L := Algebra.toModule
+  have h1 : Module.finrank K L = (Module.finrank K Kx)*(Module.finrank Kx L) := by sorry
+  have h2 : Algebra.norm K (⟨x, hLx⟩ : L) = (Algebra.norm K (⟨x, mem_adjoin_simple_self K x⟩ : Kx))^(Module.finrank Kx L) := by sorry
+  rw[h2, norm_pow]
+  have hnonneg : ‖Algebra.norm K (⟨x, mem_adjoin_simple_self K x⟩ : Kx)‖ ≥ 0 := by exact norm_nonneg ((Algebra.norm K) (⟨x, mem_adjoin_simple_self K x⟩ : Kx))
+  rw[← Real.rpow_natCast_mul hnonneg]
+  rw[h1]
+  simp
+  have h3 : (Module.finrank Kx L : ℝ)*((@Inv.inv ℝ DivInvMonoid.toInv (Module.finrank Kx L : ℝ)) * (@Inv.inv ℝ DivInvMonoid.toInv (Module.finrank K Kx : ℝ))) = 1/(Module.finrank K Kx : ℝ) := by sorry
+  rw[h3]
+  simp
+  rfl
+
 
 theorem NormExt_field_inv {K M : Type*}[NormedField K][Field M][Algebra K M](L N : IntermediateField K M)
 (hfinL : FiniteDimensional K L)(hfinN : FiniteDimensional K N)
@@ -62,8 +78,8 @@ theorem NormExt_field_inv {K M : Type*}[NormedField K][Field M][Algebra K M](L N
   have h3 : x ∈ Kx := by exact mem_adjoin_simple_self K x
   have halg : IsAlgebraic K x := finite_impl_alg L hLx
   have hfin : FiniteDimensional K Kx := by exact simple_alg_ext_finite halg
-  have h4 : NormExt K M L x hLx = NormExt K M Kx x h3 := by rw[NormExt_field_inv_help L Kx hfinL hfin hLx h3 h1]
-  have h5 : NormExt K M N x hNx = NormExt K M Kx x h3 := by rw[NormExt_field_inv_help N Kx hfinN hfin hNx h3 h2]
+  have h4 : NormExt K M L x hLx = NormExt K M Kx x h3 := by rw[NormExt_field_inv_help L hfinL hLx]
+  have h5 : NormExt K M N x hNx = NormExt K M Kx x h3 := by rw[NormExt_field_inv_help N hfinN hNx]
   rw[h4, h5]
 
 --Extended norm is a norm
@@ -119,7 +135,18 @@ NormExt K M L (x + y) hxy ≤ max (NormExt K M L x hx) (NormExt K M L y hy) := s
 --Norm is invariant under isomorphisms
 theorem NormExt_iso_inv {K M : Type*}[NormedField K][Field M][Algebra K M](L N : IntermediateField K M)[FiniteDimensional K L]
 [FiniteDimensional K N]{x : M}(hx : x ∈ L)(σ : L ≃ₐ[K] N)(hN : (σ (⟨x, hx⟩) : M) ∈ N) :
-NormExt K M L x hx = NormExt K M N (σ ⟨x, hx⟩) hN := sorry
+NormExt K M L x hx = NormExt K M N (σ ⟨x, hx⟩) hN := by
+  unfold NormExt
+  have h : Module.finrank K L = Module.finrank K N := by
+    have e : L ≃ₗ[K] N := σ.toLinearEquiv
+    exact LinearEquiv.finrank_eq e
+  have h1: Module.finrank K ↑L = Module.finrank K ↑N := by exact h
+  rw[h1]
+  have h2 : ‖Algebra.norm K (⟨x, hx⟩ : L)‖ ≥ 0 := by exact norm_nonneg ((Algebra.norm K) (⟨x, hx⟩ : L))
+  have h3 : ‖Algebra.norm K (σ ⟨x, hx⟩)‖ ≥ 0 := by exact norm_nonneg ((Algebra.norm K) (σ ⟨x, hx⟩))
+  rw[Real.rpow_left_inj h2 h3 (rec_rank_neq_zero K N)]
+  have hmain : Algebra.norm K (⟨x, hx⟩ : L) = Algebra.norm K (σ ⟨x, hx⟩) := by exact Eq.symm (Algebra.norm_eq_of_algEquiv σ ⟨x, hx⟩)
+  exact congrArg norm hmain
 
 -- Define a p-norm on the algebraic closure of `ℚ_[p]`
 noncomputable def PAdicNormExt {p : ℕ}[Fact (Nat.Prime p)](x : Q_p_bar p) : ℝ :=
@@ -179,9 +206,6 @@ theorem PAdicNormExt_mult_minus {p : ℕ}[Fact (Nat.Prime p)](x : AlgebraicClosu
   rw[NormExt_neg_one K3 h1, one_mul]
   exact NormExt_field_inv ℚ_[p]⟮x⟯ K3 hfin1 hfin3 (PAdicNormExt._proof_2 x) h2
 
-
-
--- Still have to check if the result stated like this is good for application in lemma_main, might need a reformulation
 theorem PAdicNormExt_iso_inv {p : ℕ}[Fact (Nat.Prime p)](L N : IntermediateField ℚ_[p] (Q_p_bar p))[FiniteDimensional ℚ_[p] L]
 [FiniteDimensional ℚ_[p] N]{x : Q_p_bar p}(hx : x ∈ L)(σ : L ≃ₐ[ℚ_[p]] N)(hN : (σ (⟨x, hx⟩) : Q_p_bar p) ∈ N) :
 PAdicNormExt x = PAdicNormExt (σ (⟨x, hx⟩) : Q_p_bar p) := by
@@ -200,152 +224,42 @@ PAdicNormExt x = PAdicNormExt (σ (⟨x, hx⟩) : Q_p_bar p) := by
   rw[← NormExt_field_inv N K hfinN hfin1 hN h1]
   exact NormExt_iso_inv L N hx σ hN
 
-
-
-
-
-
-open IntermediateField
-variable {F K : Type*} [Field F] [Field K] [Algebra F K]
-lemma finiteDimensional_adjoin_of_finite_of_algebraic
-  {S : Set K} (hS : S.Finite) (h_alg : ∀ x ∈ S, IsAlgebraic F x) :
-  FiniteDimensional F (IntermediateField.adjoin F S) := sorry
-
-lemma element_in_bigger_field (K : Type*) [Field K]
-    (a : AlgebraicClosure K) (S : Set (AlgebraicClosure K)) (h_a_S : a ∈ S) :
-    let K_S := IntermediateField.adjoin K S
-    a ∈ K_S := sorry
-
-
-lemma isom_lemma (K : Type*) [Field K]
-    (a b c : AlgebraicClosure K)
-    (h_conj : IsConjRoot K a c) :
-  let Ka := IntermediateField.adjoin K ({a, b} : Set (AlgebraicClosure K))
-  let Kc := IntermediateField.adjoin K ({b, c} : Set (AlgebraicClosure K))
-  (ha : a ∈ Ka) → ( hc : c ∈ Kc) →
-  ∃ (σ : Ka ≃ₐ[K] Kc),
-    σ ⟨a, ha⟩ = ⟨c, hc⟩ := sorry
-
-lemma IntermediateField.adjoin_mono {K : Type*} [Field K]
-  {S₁ S₂ : Set (AlgebraicClosure K)} (h : S₁ ⊆ S₂) :
-  IntermediateField.adjoin K S₁ ≤ IntermediateField.adjoin K S₂ := sorry
-
-lemma conj_lemma
-  {p : ℕ} [Fact (Nat.Prime p)]
-  (K : IntermediateField ℚ_[p] (AlgebraicClosure ℚ_[p]))
-  (a : AlgebraicClosure ℚ_[p])
-  (h : a ∉ K) :
-  ∃ c : AlgebraicClosure ℚ_[p], a ≠ c ∧ IsConjRoot K a c := sorry
-
-lemma sigma_isom
-  {p : ℕ} [Fact (Nat.Prime p)]
-  (K : IntermediateField ℚ_[p] (AlgebraicClosure ℚ_[p]))
-  (a c : AlgebraicClosure ℚ_[p])
-  (h : IsConjRoot K a c) :
-  ∃ (σ : AlgebraicClosure ℚ_[p] ≃ₐ[K] AlgebraicClosure ℚ_[p]),
-    σ a = c ∧ ∀ x ∈ K, σ x = x := sorry
-
-
 theorem PAdicNormExt_big_iso_inv {p : ℕ}[Fact (Nat.Prime p)](K : IntermediateField ℚ_[p] (Q_p_bar p))(x : Q_p_bar p)
 (σ : (Q_p_bar p) ≃ₐ[ℚ_[p]] (Q_p_bar p)) : PAdicNormExt x = PAdicNormExt (σ x) := by
   let Kx : IntermediateField ℚ_[p] (Q_p_bar p) := adjoin ℚ_[p] ({x} : Set (Q_p_bar p))
   let Ksx : IntermediateField ℚ_[p] (Q_p_bar p) := adjoin ℚ_[p] ({σ x} : Set (Q_p_bar p))
   sorry
 
+-- Characterization of conjugates via isomorphisms
+theorem exists_isomorphism_to_conjugate (K : Type*)[Field K](a b: AlgebraicClosure K)(h: IsConjRoot K a b):
+let Ka := IntermediateField.adjoin K {a}
+let Kb := IntermediateField.adjoin K {b}
+∃ (σ : Ka ≃ₐ[K] Kb), σ ⟨a, mem_adjoin_simple_self K a⟩ = ⟨b, mem_adjoin_simple_self K b⟩:= by sorry
 
+-- All extensions of `ℚ_[p]` are separable
+theorem all_extensions_of_Q_p_separable {p : ℕ}[Fact (Nat.Prime p)](K : Type*)[Field K][Algebra ℚ_[p] K][FiniteDimensional ℚ_[p] K] :
+Algebra.IsSeparable ℚ_[p] K := sorry
 
-
-
-
--- main lemma we want to prove that a belongs to ℚ_p(b).
-
---0. assume that a ∉ K.
---1. [K(a),K] > 1 --> ∃ c ≠ a Galois conj of a.  h1
---2. ∃ σ : K(a) --> K(c) isom s.t K is fixed, σ(a) = c (by  exists_isomorphism_to_conjugate).
---3. |σ(x)|_p = |x|p to all x in AlgebraicClosure(ℚ_p). (PAdicNormExt_iso_inv)
---4. |b-c|_p = |σ(b) - σ(a)|_p = |b-a|_p
---5. |c-a|_p ≤ max(|c-b|_p , |b-a|_p) = |b-a|_p < |c-a|_p --->contradiction
-
-
-
-
-
-
+--Main part of the proof of Krasner's lemma
 lemma lemma_main {p : ℕ}[Fact (Nat.Prime p)](a b : AlgebraicClosure ℚ_[p])
-(h : ∀ (x : AlgebraicClosure ℚ_[p]), a ≠ x ∧ IsConjRoot ℚ_[p] a x → PAdicNormExt (b - a) < PAdicNormExt (x - a)) :
+(h : ∀ (x : AlgebraicClosure ℚ_[p]), x ≠ a ∧ IsConjRoot ℚ_[p] a x → PAdicNormExt (b - a) < PAdicNormExt (x - a)) :
 a ∈ adjoin ℚ_[p] ({b} : Set (AlgebraicClosure ℚ_[p])) := by
-  --proving by contradiction
-  by_contra h0
-
+  by_contra h1
   let K : IntermediateField ℚ_[p] (AlgebraicClosure ℚ_[p]) := adjoin ℚ_[p] ({b} : Set (AlgebraicClosure ℚ_[p]))
-  let Ka : IntermediateField ℚ_[p] (AlgebraicClosure ℚ_[p]):= IntermediateField.adjoin ℚ_[p] ({a,b} : Set (AlgebraicClosure ℚ_[p]))
-  have a_Algebraic : IsAlgebraic ℚ_[p] a := by exact Algebra.IsAlgebraic.isAlgebraic a
+  let L : IntermediateField K (AlgebraicClosure ℚ_[p]) := adjoin K ({a} : Set (AlgebraicClosure ℚ_[p]))
+  -- For the proof of h2, use not_mem_iff_exists_ne_and_isConjRoot (with K and AlgebraicClosure ℚ_[p])
+  -- Ingredients needed: a separable over K and minimal polynomial of a over K splits over AlgebraicClosure ℚ_[p]
+  have h2 : ∃ (c : AlgebraicClosure ℚ_[p]), a ≠ c ∧ IsConjRoot K a c := by sorry
+  sorry
 
-  have h1 : ∃ (c : AlgebraicClosure ℚ_[p]), a ≠ c ∧ IsConjRoot K a c := conj_lemma K a h0
+/-- If `a ∈ K(b)`, then the intermediate field `K(a)` is contained in `K(b)`. -/
+theorem adjoin_of_mem_adjoin {K : Type*} [Field K] (a b : AlgebraicClosure K)
+  (h : a ∈ adjoin K ({b} : Set (AlgebraicClosure K))) :
+  adjoin K ({a} : Set (AlgebraicClosure K)) ≤ adjoin K ({b} : Set (AlgebraicClosure K)) :=
+  adjoin_le_iff.2 (Set.singleton_subset_iff.2 h)
 
-  obtain ⟨c, hc⟩ := h1
-  rcases hc with ⟨c_ne_a, h_conj_in_K⟩
-
-  let Kc : IntermediateField ℚ_[p] (AlgebraicClosure ℚ_[p]) := IntermediateField.adjoin ℚ_[p] ({b,c} : Set (AlgebraicClosure ℚ_[p]))
-
-
-  have a_c_conj_help : IsConjRoot ℚ_[p] a c :=
-  isConjRoot_of_aeval_eq_zero
-    (IsAlgebraic.isIntegral a_Algebraic)
-    (IsConjRoot.aeval_eq_zero (IsConjRoot.of_isScalarTower (IsAlgebraic.isIntegral a_Algebraic) h_conj_in_K))
-
-  -- having an isom that sends a → c
-  have h2 : ∃ (σ : AlgebraicClosure ℚ_[p] ≃ₐ[K] AlgebraicClosure ℚ_[p]),
-  σ a = c ∧ ∀ x ∈ K, σ x = x := sigma_isom K a c h_conj_in_K
-
-  obtain ⟨σ, ⟨h_sigma1, h_sigma_K⟩⟩ := h2
-
-
-  --sigma fixes b (as it fixes K.)
-  have sigma_b : σ (b) = b :=
-    haveI b_in_K : b ∈ K := element_in_bigger_field ℚ_[p] b {b} (Set.mem_singleton b)
-    h_sigma_K  b b_in_K
-
-
-  have Lin_of_sigma : PAdicNormExt (σ (b - a) : AlgebraicClosure ℚ_[p]) = PAdicNormExt ((σ (b) :
-  AlgebraicClosure ℚ_[p]) - (σ (a) : AlgebraicClosure ℚ_[p])) := by
-    rw [map_sub]
-
-
-  have neg_sub_norm : PAdicNormExt (-(b - c)) = PAdicNormExt (c - b) := by
-    congr 1
-    rw [neg_sub]
-
-
-  have sigma_qp : AlgebraicClosure ℚ_[p] ≃ₐ[ℚ_[p]] AlgebraicClosure ℚ_[p] :=
-      AlgEquiv.restrictScalars ℚ_[p] σ
-
-
-  have h_norm_inv : PAdicNormExt (b - a)
-  = PAdicNormExt ((AlgEquiv.restrictScalars ℚ_[p] σ) (b - a)) := PAdicNormExt_big_iso_inv ⊥ (b - a) (AlgEquiv.restrictScalars ℚ_[p] σ)
-
-
-  have h4 : PAdicNormExt (b - a) = PAdicNormExt  (c-b) := calc
-     PAdicNormExt (b - a) = PAdicNormExt (σ (b-a) : AlgebraicClosure ℚ_[p]) := h_norm_inv
-     _ = PAdicNormExt ((σ (b) : AlgebraicClosure ℚ_[p]) - (σ (a) : AlgebraicClosure ℚ_[p])) := Lin_of_sigma
-     _ = PAdicNormExt (b - (σ (a) : AlgebraicClosure ℚ_[p])) := by rw [sigma_b]
-     _ = PAdicNormExt (b - c) := by rw [h_sigma1]
-     _ = PAdicNormExt (-(b - c)) := PAdicNormExt_mult_minus (b-c)
-     _ = PAdicNormExt (c - b) := neg_sub_norm
-
-
-  have max_is_b_sub_a : max (PAdicNormExt  (c - b)) (PAdicNormExt (b - a)) = PAdicNormExt (b - a) := by
-    rw [h4]
-    simp
-
-  have a_c_IsConj_in_Q_p : a ≠ c ∧ IsConjRoot ℚ_[p] a c := ⟨ c_ne_a , a_c_conj_help⟩
-
---reach contradiction
-  have h5 : PAdicNormExt  (c - a) < PAdicNormExt (c - a) := calc
-    PAdicNormExt (c - a) = PAdicNormExt ((c - b) + (b-a)) := by rw [sub_add_sub_cancel]
-    _ ≤ max (PAdicNormExt (c - b)) (PAdicNormExt (b - a)) := PAdicNormExt_non_arch (c - b) (b - a)
-    _ = PAdicNormExt (b - a) := max_is_b_sub_a
-    _ < PAdicNormExt (c - a) := h c a_c_IsConj_in_Q_p
-
-  -- "score the goal"
-  exact lt_irrefl _ h5
+theorem lemma_krasner {p : ℕ}[Fact (Nat.Prime p)](a b : AlgebraicClosure ℚ_[p])
+(h : ∀ (x : AlgebraicClosure ℚ_[p]), x ≠ a ∧ IsConjRoot ℚ_[p] a x → PAdicNormExt (b - a) < PAdicNormExt (x - a)) :
+adjoin ℚ_[p] ({a} : Set (AlgebraicClosure ℚ_[p])) ≤ adjoin ℚ_[p] ({b} : Set (AlgebraicClosure ℚ_[p])) :=
+  have ha : a ∈ adjoin ℚ_[p] ({b} : Set (AlgebraicClosure ℚ_[p])) := lemma_main a b h
+  adjoin_of_mem_adjoin a b ha

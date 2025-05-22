@@ -26,18 +26,18 @@
 \maketitle
 \begin{frame}{Plan for Today}
 
-\begin{itemize}
-    \item 1. Construction of \(p\)-adic numbers and their properties.
-    \item 2. Reminder of field theory and Krasner's lemma.
-    \item 3. Krasner's lemma in Lean.
-    \item 4. Lean implementation and main takeaways.
-\end{itemize}
+\begin{enumerate}
+    \item Construction of the \(p\)-adic numbers and their properties
+    \item Reminder of field theory and Krasner's lemma
+    \item Krasner's lemma in Lean
+    \item Lean implementation and main takeaways
+\end{enumerate}
 
 \end{frame}
 
 
 
-\section{Construction of \(p\)-adic numbers}
+\section{Construction of the \(p\)-Adic Numbers}
 \begin{frame}{Norms and Induced Metrics} 
 Let $K$ be a field. A function $\|\cdot\| : K \to \mathbb{R}_{\geq 0}$ is called a \textbf{norm} (or absolute value) on $K$ if it satisfies, for all $x, y \in K$:
 \begin{itemize}
@@ -194,14 +194,9 @@ All of these definitions are well-defined, which is checked by routine arguments
 \end{frame}
 \begin{frame}{3-adic Visualization Animation}
 
-
 \end{frame}
 
-
-
-
-
-\section{Field theory}
+\section{Field Theory}
 \begin{frame}{Some Field Theory}
     Let $L/K$ be a field extension, meaning that $K$ is a subfield of $L$.
     \pause
@@ -220,6 +215,7 @@ All of these definitions are well-defined, which is checked by routine arguments
     \end{itemize}
 \end{frame}
 
+\section{Krasner's Lemma}
 \begin{frame}{Krasner's Lemma}
     \textbf{Theorem:} Let $a, b \in \overline{\Q_p}$. Suppose that for every conjugate 
     $a_i \neq a$ of $a$ in $\overline{\Q_p}$ (over $\Q_p$) it holds that 
@@ -255,50 +251,7 @@ All of these definitions are well-defined, which is checked by routine arguments
     \end{align*}
     which is a contradiction.
 \end{frame}
-\section{Krasner's lemma in Lean}
-\begin{frame}{Implementation in Lean}
-    
-\end{frame}
-
-\begin{frame}{Some More Field Theory}
-    Let $L/K$ be a finite (hence also algebraic) field extension. 
-    \begin{itemize}
-        \item For $x \in L$, denote $m_x \colon L \to L$ to be the $K$-linear map of 
-        multiplication by $x$.
-        \pause 
-        \item We define the norm of $x$ as $N_{L/K}(x) = \mathrm{det}(m_x)$.
-        \pause 
-        \item It holds that $N_{L/K}(x) \in K$ and $N_{L/K}(xy) = N_{L/K}(x)N_{L/K}(y)$.
-        \pause 
-        \item For $x \in K$, we have that $N_{L/K}(x) = x^{[L : K]}$.
-        \pause 
-        \item If $M/L$ is another finite field extension, then $N_{M/K} = N_{L/K} \circ N_{M/L}$.
-    \end{itemize}
-\end{frame}
-
-\begin{frame}{Extension of Norms}
-    Let $L/K$ be a finite field extension and suppose that $K$ is a normed field.\pause We define a norm an $L$ that extends the norm on $K$ via 
-    \begin{equation*}
-        \|x\| = \|N_{L/K}(x)\|^{1/[L : K]}.
-    \end{equation*}
-    \pause 
-    If $M$ is an intermediate field of $L/K$ containing $x$, then 
-    \begin{align*}
-        \|N_{L/K}(x)\|^{1/[L : K]} &= \|N_{M/K}(N_{L/M}(x)\|^{1/[L : K]} \\ &= \|N_{M/K}(x)\|^{[L : M]/[L : K]} = \|N_{M/K}(x)\|^{1/[M : K]}.
-    \end{align*}
-    \pause 
-    Hence we can extend the norm on $K$ to a norm on the algebraic closure $\bar{K}$.
-\end{frame}
-
-\begin{frame}{Extension of Norms}
-    \begin{itemize}
-        \item Showing that the triangle inequality holds is not so easy.
-        \pause 
-        \item If $K$ is complete, then this extension is unique. 
-        \pause 
-        \item If $K$ is complete, non-Archimedian and locally compact, the extended norm is also non-Archimedian. Again, the non-Archimedian triangle inequality is a little tricky to check.
-    \end{itemize}
-\end{frame}
+\section{Krasner's Lemma in Lean}
 
 \begin{frame}{Krasner’s Lemma in Lean}
 
@@ -312,7 +265,7 @@ All of these definitions are well-defined, which is checked by routine arguments
 \textcolor{black}{$h : \forall x \in \text{AlgebraicClosure}\ \mathbb{Q}_p,\ x \neq a \wedge \text{IsConjRoot}\ \mathbb{Q}_p\ a\ x \rightarrow \text{PAdicNormExt}(b - a) < \text{PAdicNormExt}(x - a)$}%
 \textcolor{black}{\texttt{)}} \textcolor{purple}{\texttt{:}} \\
 
-\textcolor{blue}{\texttt{adjoin }}$\mathbb{Q}$\textcolor{blue}{\texttt{\_p (\{a\} : Set (AlgebraicClosure }}$\mathbb{Q}$\textcolor{blue}{\texttt{\_p)) ≤ adjoin }}$\mathbb{Q}$\textcolor{blue}{\texttt{\_p (\{b\} : Set (AlgebraicClosure }}$\mathbb{Q}$\textcolor{blue}{\texttt{\_p))}} \textcolor{purple}{\texttt{:=}}
+\textcolor{blue}{\texttt{adjoin }}$\mathbb{Q}$\textcolor{blue}{\texttt{\_p (\{a\} : Set (AlgebraicClosure }}$\mathbb{Q}$\textcolor{blue}{\texttt{\_p))}} $\leq$ \textcolor{blue}{\texttt{adjoin }}$\mathbb{Q}$\textcolor{blue}{\texttt{\_p (\{b\} : Set (AlgebraicClosure }}$\mathbb{Q}$\textcolor{blue}{\texttt{\_p))}} \textcolor{purple}{\texttt{:=}}
 \vspace{1em}
 \begin{center}
 \begin{tabular}{|p{0.45\textwidth}|p{0.45\textwidth}|}
@@ -324,10 +277,10 @@ All of these definitions are well-defined, which is checked by routine arguments
 \texttt{\quad lemma\_main a b h}
 \end{minipage}
 &
-\textit{\textcolor{red}{We prove that a belongs to K(b) using the 'main\_lemma'}} \\
+\textit{\textcolor{red}{We prove that a belongs to K = Qp(b) using the 'main\_lemma'}} \\
 \hline
 \texttt{adjoin\_of\_mem\_adjoin a b ha} &
-\textit{\textcolor{red}{We explain why it's enough to deduce that there is field embedding of K(a) to K(b)}} \\
+\textit{\textcolor{red}{We explain why that is enough to deduce that Qp(a) is contained in Qp(b)}} \\
 \hline
 \end{tabular}
 \end{center}
@@ -355,14 +308,14 @@ All of these definitions are well-defined, which is checked by routine arguments
 \textbf{Lean} & \textbf{Explanation} \\
 \hline
 \begin{minipage}[t]{\linewidth}
-\texttt{have h1 : ∃ (c : AlgebraicClosure Q\_p), a ≠ c ∧ IsConjRoot K a c := conj\_lemma K a h0}
+\texttt{have h1 : ∃ (c : AlgebraicClosure Q\_p), a }$\neq$\texttt{ c }$\wedge$ \texttt{IsConjRoot K a c := conj\_lemma K a h0}
 \end{minipage}
 &
 \textit{\textcolor{red}{Get a Galois conj.}} \\
 \hline
 \begin{minipage}[t]{\linewidth}
-\texttt{have h2 : ∃ (σ : AlgebraicClosure Q\_p ≃ₐ[K] AlgebraicClosure Q\_p),} \\
-\texttt{\quad σ a = c ∧ ∀ x ∈ K, σ x = x := sigma\_isom K a c h\_conj\_in\_K}
+\texttt{have h2 : }$\exists$\texttt{ (}$\sigma$\texttt{ : AlgebraicClosure Q\_p ≃ₐ[K] AlgebraicClosure Q\_p),} \\
+\texttt{\quad }$\sigma$\texttt{ a = c }$\wedge$\texttt{ }$\forall$\texttt{ x }$\in$\texttt{ K, }$\sigma$\texttt{ x = x := sigma\_isom K a c h\_conj\_in\_K}
 \end{minipage}
 &
 \textit{\textcolor{red}{Get an isom. from the conj.}} \\
@@ -431,15 +384,57 @@ $\_\leq\,$ \texttt{max (PAdicNormExt (c - b)) (PAdicNormExt (b - a)) := PAdicNor
 \end{center}
 
 \end{frame}
-\section{Key points}
+
+
+\section{Field Theory}
+\begin{frame}{Some More Field Theory}
+    Let $L/K$ be a finite (hence also algebraic) field extension. 
+    \begin{itemize}
+        \item For $x \in L$, denote $m_x \colon L \to L$ to be the $K$-linear map of 
+        multiplication by $x$.
+        \pause 
+        \item We define the norm of $x$ as $N_{L/K}(x) = \mathrm{det}(m_x)$.
+        \pause 
+        \item It holds that $N_{L/K}(x) \in K$ and $N_{L/K}(xy) = N_{L/K}(x)N_{L/K}(y)$.
+        \pause 
+        \item For $x \in K$, we have that $N_{L/K}(x) = x^{[L : K]}$.
+        \pause 
+        \item If $M/L$ is another finite field extension, then $N_{M/K} = N_{L/K} \circ N_{M/L}$.
+    \end{itemize}
+\end{frame}
+
+\section{Extension of Norms}
+\begin{frame}{Extension of Norms}
+    Let $L/K$ be a finite field extension and suppose that $K$ is a normed field.\pause We define a norm an $L$ that extends the norm on $K$ via 
+    \begin{equation*}
+        \|x\| = \|N_{L/K}(x)\|^{1/[L : K]}.
+    \end{equation*}
+    \pause 
+    If $M$ is an intermediate field of $L/K$ containing $x$, then 
+    \begin{align*}
+        \|N_{L/K}(x)\|^{1/[L : K]} &= \|N_{M/K}(N_{L/M}(x)\|^{1/[L : K]} \\ &= \|N_{M/K}(x)\|^{[L : M]/[L : K]} = \|N_{M/K}(x)\|^{1/[M : K]}.
+    \end{align*}
+    \pause 
+    Hence we can extend the norm on $K$ to a norm on the algebraic closure $\bar{K}$.
+\end{frame}
+
+\begin{frame}{Extension of Norms}
+    \begin{itemize}
+        \item Showing that the triangle inequality holds is not so easy.
+        \pause 
+        \item If $K$ is complete, then this extension is unique. 
+        \pause 
+        \item If $K$ is complete, non-Archimedian and locally compact, the extended norm is also non-Archimedian. Again, the non-Archimedian triangle inequality is a little tricky to check.
+    \end{itemize}
+\end{frame}
+
+\section{Key Points}
 \begin{frame}{Implementation in Lean – Key Points and Takeaways}
 
 \begin{itemize}
-    \item Many parts of this were already implemented in Lean 3 (approx.\ 5000 lines of code), but the PR was never merged.
+    \item Many parts of this were already implemented in Lean 3 (approx.\ 5000 lines of code) in a more general context, but it has not been migrated to Lean 4 as of yet.
     
     \item \textbf{Intermediate fields:} Sometimes it's best to work under a much bigger field than you “need” to avoid complications from type mismatches and coercions.
-    
-    \item The norm extension over \(\mathbb{Q}_p\).
 \end{itemize}
 
 \end{frame}
