@@ -1,6 +1,6 @@
 
 import Mathlib
-set_option maxHeartbeats 1000000
+
 
 open IntermediateField Classical FiniteDimensional LinearMap LinearAlgebra
 
