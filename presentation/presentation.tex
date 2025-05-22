@@ -1,0 +1,448 @@
+\documentclass{beamer}
+\usepackage{amsmath, amssymb}% For math
+\usepackage{array}
+\usepackage{listings}              % For Lean-style code formatting
+\usepackage{xcolor} 
+\usepackage{media9}
+
+\setbeamertemplate{headline}{
+  \leavevmode%
+  \hbox{%
+    \begin{beamercolorbox}[wd=\paperwidth,ht=2.5ex,dp=3ex,rightskip=1em]{section in head/foot}
+      \hfill\usebeamerfont{section in head/foot} \insertsection
+    \end{beamercolorbox}%
+  }%
+}
+
+\title{p-Adic Numbers and Krasner's Lemma}
+\author{Jonatan Beiruty and Alois Schaffler}
+\date{May 22, 2025}
+
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\C}{\mathbb{C}}
+\begin{document}
+
+\maketitle
+\begin{frame}{Plan for Today}
+
+\begin{itemize}
+    \item 1. Construction of \(p\)-adic numbers and their properties.
+    \item 2. Reminder of field theory and Krasner's lemma.
+    \item 3. Krasner's lemma in Lean.
+    \item 4. Lean implementation and main takeaways.
+\end{itemize}
+
+\end{frame}
+
+
+
+\section{Construction of \(p\)-adic numbers}
+\begin{frame}{Norms and Induced Metrics} 
+Let $K$ be a field. A function $\|\cdot\| : K \to \mathbb{R}_{\geq 0}$ is called a \textbf{norm} (or absolute value) on $K$ if it satisfies, for all $x, y \in K$:
+\begin{itemize}
+    \item \textbf{Non-degeneracy:} $\|x\| = 0 \iff x = 0$,
+    \item \textbf{Multiplicativity:} $\|xy\| = \|x\| \cdot \|y\|$,
+    \item \textbf{Triangle inequality:} $\|x + y\| \leq \|x\| + \|y\|$.
+\end{itemize}
+\pause 
+A norm is called \textbf{non-Archimedian} if 
+\begin{equation*}
+    \|x + y\| \leq \max\{\|x\|, \|y\|\}.
+\end{equation*}
+\end{frame}
+
+\begin{frame}{The $p$-Adic Norm on $\mathbb{Q}$}
+Let $p$ be a fixed prime number. Define
+\[
+\operatorname{ord}_p(n) := \max\{k \in \mathbb{Z}_{\geq 0} \mid p^k \mid n \}.
+\]
+\pause
+This extends naturally to nonzero rationals:
+\[
+\operatorname{ord}_p\left(\frac{a}{b}\right) := \operatorname{ord}_p(a) - \operatorname{ord}_p(b).
+\]
+\pause
+The \textbf{$p$-adic norm} on $\mathbb{Q}$ is then defined as:
+\[
+|x|_p := 
+\begin{cases}
+p^{-\operatorname{ord}_p(x)} & \text{if } x \neq 0, \\
+0 & \text{if } x = 0.
+\end{cases}
+\]
+This is a non-Archimedian norm.
+\end{frame}
+
+\begin{frame}{Examples}
+\begin{itemize}
+
+\item $|27|_3 = 3^{-\operatorname{ord}_3(27)} = 3^{-3} = \frac{1}{27}$,
+\item $\left|\frac{81}{2}\right|_3 = 3^{-(\operatorname{ord}_3(81) - \operatorname{ord}_3(2)} = 3^{-4} = \frac{1}{81}$,
+\item $\left|\frac{1}{243}\right|_3 = 3^{-(\operatorname{ord}_3(1) - \operatorname{ord}_3(243))} = 3^{5} = 243$.
+\end{itemize}
+\bigskip
+\pause
+\textbf{Observation:} The $p$-adic concept of size is very different from our usual understanding.
+\end{frame}
+
+\begin{frame}{Ostrowski's Theorem}
+
+\textbf{Theorem:} Every absolute value $\|\cdot\|$ on $\mathbb{Q}$ is equivalent to exactly one of the following:
+\begin{itemize}
+    \item The trivial absolute value, given by $\|x\|_{\mathrm{triv}} = 1$ for $x \neq 0$.
+    \item The usual absolute value $|\cdot|$.
+    \item A $p$-adic norm $|\cdot|_p$ for some prime $p$.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Completeness}
+    Recall that a metric space is called complete if every Cauchy sequence is convergent.
+    Completeness is one of the most fundamental properties of metric spaces.
+    \pause
+    
+    \bigskip
+    The space $(\Q, |\cdot|_p)$ is not complete. Its \textbf{completion} is denoted 
+    $\Q_p$, the \textbf{$p$-adic numbers}.
+\end{frame}
+
+\begin{frame}{Completion of $(\Q, |\cdot|_p)$}
+    We will construct a normed field $(\Q_p, |\cdot|_p)$ satisfying the following properties:
+    \pause
+    \begin{itemize}
+        \item $(\Q_p, |\cdot|_p)$ is complete.
+        \pause 
+        \item There is an embedding $\iota \colon \Q \to \Q_p$.
+        \pause 
+        \item $\iota(\Q)$ is dense in $\Q_p$.
+        \pause 
+        \item $\iota$ is an isometry, that is $|\iota(x)|_p = |x|_p$ for all $x \in \Q$.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Construction of $\Q_p$}
+\textbf{Step 1:} Consider the set of all Cauchy sequences in $(\mathbb{Q}, |\cdot|_p)$:
+\[
+\mathcal{C}_p := \{ (a_n)_{n \in \mathbb{N}} \in \mathbb{Q}^\N \mid (a_n)_{n \in \N} \text{ is a Cauchy sequence }\}.
+\]
+\pause
+\textbf{Step 2:} Define the following equivalence relation:
+\[
+(a_n)_{n \in \N} \sim (b_n)_{n \in \N} \iff \lim_{n \to \infty} |a_n - b_n|_p = 0.
+\]
+\pause
+\textbf{Step 3:} Define the $p$-adic numbers as
+\[
+\mathbb{Q}_p := \mathcal{C}_p /\sim.
+\]
+\pause
+\textbf{Defining the norm on $\mathbb{Q}_p$:}
+For a class $[(a_n)_{n \in \N}] \in \mathbb{Q}_p$, define:
+\[
+|[(a_n)_{n \in \N}]|_p := \lim_{n \to \infty} |a_n|_p
+\]
+\end{frame}
+
+\begin{frame}{Construction of $\Q_p$}
+\textbf{Operations on $\Q_p$:}
+\begin{align*}
+    [(a_n)_{n \in \N}] + [(b_n)_{n \in \N}] &:= [(a_n + b_n)_{n \in \N}], \\
+    [(a_n)_{n \in \N}][(b_n)_{n \in \N}] &:= [(a_nb_n)_{n \in \N}]. \\
+\end{align*}
+\pause
+We define 
+\begin{align*}
+    \iota \colon \Q &\to \Q_p \\
+    x &\mapsto [(x)_{n \in \N}].
+\end{align*}
+\pause 
+All of these definitions are well-defined, which is checked by routine arguments, and our desired properties are fulfilled.
+\end{frame}
+
+\begin{frame}{Properties of $\Q_p$}
+    \begin{itemize}
+        \item $(\Q_p, |\cdot|_p)$ is complete.
+        \pause
+        \item The norm $|\cdot|_p$ on $\Q_p$ is non-Archimedian.
+        \pause
+        \item The values of $|\cdot|_p$ lie in the set 
+        \begin{equation*}
+            \{p^n \mid n \in \mathbb{Z}\} \cup \{0\}.
+        \end{equation*}
+        \pause 
+        \item $\Q_p$ is totally disconnected. 
+        \pause 
+        \item $\Q_p$ is locally compact.
+        \pause 
+        \item $\Q_p$ is \textbf{not} algebraically closed.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Algebraic Closure and Completeness}
+    We would like to have an algebraically closed and complete field containing $\Q$.
+    Consider the algebraic closure $\overline{\Q_p}$. It is possible to extend 
+    $|\cdot|_p$ to $\overline{\Q_p}$. \pause However, $(\overline{\Q_p}, |\cdot|_p)$ is 
+    not complete. \pause 
+
+    \bigskip 
+    \textbf{Question:} In the $p$-adic world, can we ever reach a field that is \emph{both} complete and algebraically closed? 
+    \pause 
+
+    \bigskip
+    \textbf{Answer:} Yes, we can. Completing $(\overline{\Q_p}, |\cdot|_p)$ yields a non-Archimedian normed
+    field $(\C_p, |\cdot|_p)$ which is complete and algebraically closed.
+\end{frame}
+\begin{frame}{3-adic Visualization Animation}
+
+
+\end{frame}
+
+
+
+
+
+\section{Field theory}
+\begin{frame}{Some Field Theory}
+    Let $L/K$ be a field extension, meaning that $K$ is a subfield of $L$.
+    \pause
+    \begin{itemize}
+        \item An element $x \in L$ is called \textbf{algebraic} over $K$ if there exists a non-zero polynomial $P \in K[X]$ with $P(x) = 0$.
+        \pause 
+        \item The \textbf{minimal polynomial} $P_x \in K[X]$ of an algebraic element is the unique monic irreducible polynomial in $K[X]$ with $P_x(x) = 0$.
+        \pause
+        \item The extension $L/K$ is called algebraic if every element of $L$ is algebraic over $K$.
+        \pause 
+        \item Suppose that the minimal polynomial $P_x$ of $x \in L$ splits as a product of linear factors in $L[X]$. The \textbf{conjugates} of $x$ over $K$ are the zeros of $P_x$ in $L$.
+        \pause 
+        \item An algebraic element $x \in L$ is called \textbf{separable} if the minimal polynomial $P_x \in K[X]$ only has simple roots (in some field where it splits).
+        \pause 
+        \item We denote $K(x)$ the smallest subfield of $L$ containing $K \cup \{x\}$.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Krasner's Lemma}
+    \textbf{Theorem:} Let $a, b \in \overline{\Q_p}$. Suppose that for every conjugate 
+    $a_i \neq a$ of $a$ in $\overline{\Q_p}$ (over $\Q_p$) it holds that 
+    \begin{equation*}
+        |b - a|_p < |a_i - a|_p.
+    \end{equation*}
+    Then $\Q_p(a) \subseteq \Q_p(b)$.
+    \pause 
+
+    \bigskip 
+    Krasner's lemma can be used to prove that $\C_p$ is algebraically closed.
+\end{frame}
+
+\begin{frame}{Proof of Krasner's Lemma}
+    Set $K := \Q_p(b)$, and assume by way of contradiction that $a \notin K$. \pause By basic results from field theory, it follows that there exists a conjugate $a_i \neq a$ of $a$ over $K$. \pause Again by field theory, there exists an isomorphism 
+    \begin{equation*}
+        \sigma \colon K(a) \to K(a_i)
+    \end{equation*}
+    such that $\sigma|_K = \mathrm{id}_K$ and $\sigma(a) = a_i$. \pause We will see later that 
+    $|\cdot|_p$ is invariant under isomorphisms, i.e. $|\sigma(x)|_p = |x|_p$ for every $x \in K(a)$. 
+\end{frame}
+
+\begin{frame}{Proof of Krasner's Lemma}
+    This implies that
+    \begin{equation*}
+        |b - a|_p = |\sigma(b - a)|_p = |b - \sigma(a)|_p = |b - a_i|_p.
+    \end{equation*}
+    \pause
+    We conclude that 
+    \begin{align*}
+        |a_i - a|_p &= |a_i - b + b - a|_p \leq \max\{|a_i - b|_p, |b - a|_p\} \\ 
+        &= |b - a|_p < |a_i - a|_p,
+    \end{align*}
+    which is a contradiction.
+\end{frame}
+\section{Krasner's lemma in Lean}
+\begin{frame}{Implementation in Lean}
+    
+\end{frame}
+
+\begin{frame}{Some More Field Theory}
+    Let $L/K$ be a finite (hence also algebraic) field extension. 
+    \begin{itemize}
+        \item For $x \in L$, denote $m_x \colon L \to L$ to be the $K$-linear map of 
+        multiplication by $x$.
+        \pause 
+        \item We define the norm of $x$ as $N_{L/K}(x) = \mathrm{det}(m_x)$.
+        \pause 
+        \item It holds that $N_{L/K}(x) \in K$ and $N_{L/K}(xy) = N_{L/K}(x)N_{L/K}(y)$.
+        \pause 
+        \item For $x \in K$, we have that $N_{L/K}(x) = x^{[L : K]}$.
+        \pause 
+        \item If $M/L$ is another finite field extension, then $N_{M/K} = N_{L/K} \circ N_{M/L}$.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Extension of Norms}
+    Let $L/K$ be a finite field extension and suppose that $K$ is a normed field.\pause We define a norm an $L$ that extends the norm on $K$ via 
+    \begin{equation*}
+        \|x\| = \|N_{L/K}(x)\|^{1/[L : K]}.
+    \end{equation*}
+    \pause 
+    If $M$ is an intermediate field of $L/K$ containing $x$, then 
+    \begin{align*}
+        \|N_{L/K}(x)\|^{1/[L : K]} &= \|N_{M/K}(N_{L/M}(x)\|^{1/[L : K]} \\ &= \|N_{M/K}(x)\|^{[L : M]/[L : K]} = \|N_{M/K}(x)\|^{1/[M : K]}.
+    \end{align*}
+    \pause 
+    Hence we can extend the norm on $K$ to a norm on the algebraic closure $\bar{K}$.
+\end{frame}
+
+\begin{frame}{Extension of Norms}
+    \begin{itemize}
+        \item Showing that the triangle inequality holds is not so easy.
+        \pause 
+        \item If $K$ is complete, then this extension is unique. 
+        \pause 
+        \item If $K$ is complete, non-Archimedian and locally compact, the extended norm is also non-Archimedian. Again, the non-Archimedian triangle inequality is a little tricky to check.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Krasner’s Lemma in Lean}
+
+\scriptsize
+\textcolor{red}{\texttt{theorem}} \textcolor{green}{\texttt{lemma\_krasner}}
+\textcolor{black}{$\{p : \mathbb{N}\}$} 
+\textcolor{black}{\texttt{[}}\textcolor{black}{Fact} \textcolor{black}{\texttt{(}}\textcolor{black}{Nat.Prime} $\textcolor{black}{p}$\textcolor{black}{\texttt{)]}} 
+\textcolor{black}{$(a\ b : \text{AlgebraicClosure}\ \mathbb{Q}_p)$} \\
+
+\textcolor{black}{\texttt{(}}%
+\textcolor{black}{$h : \forall x \in \text{AlgebraicClosure}\ \mathbb{Q}_p,\ x \neq a \wedge \text{IsConjRoot}\ \mathbb{Q}_p\ a\ x \rightarrow \text{PAdicNormExt}(b - a) < \text{PAdicNormExt}(x - a)$}%
+\textcolor{black}{\texttt{)}} \textcolor{purple}{\texttt{:}} \\
+
+\textcolor{blue}{\texttt{adjoin }}$\mathbb{Q}$\textcolor{blue}{\texttt{\_p (\{a\} : Set (AlgebraicClosure }}$\mathbb{Q}$\textcolor{blue}{\texttt{\_p)) ≤ adjoin }}$\mathbb{Q}$\textcolor{blue}{\texttt{\_p (\{b\} : Set (AlgebraicClosure }}$\mathbb{Q}$\textcolor{blue}{\texttt{\_p))}} \textcolor{purple}{\texttt{:=}}
+\vspace{1em}
+\begin{center}
+\begin{tabular}{|p{0.45\textwidth}|p{0.45\textwidth}|}
+\hline
+\textbf{Lean} & \textbf{Explanation} \\
+\hline
+\begin{minipage}[t]{\linewidth}
+\texttt{have ha : a ∈ adjoin Q\_p (\{b\} : Set (AlgebraicClosure Q\_p)) :=}\\
+\texttt{\quad lemma\_main a b h}
+\end{minipage}
+&
+\textit{\textcolor{red}{We prove that a belongs to K(b) using the 'main\_lemma'}} \\
+\hline
+\texttt{adjoin\_of\_mem\_adjoin a b ha} &
+\textit{\textcolor{red}{We explain why it's enough to deduce that there is field embedding of K(a) to K(b)}} \\
+\hline
+\end{tabular}
+\end{center}
+\end{frame}
+
+\begin{frame}{Main Lemma in Lean}
+
+\scriptsize
+\textcolor{red}{\texttt{lemma}} \textcolor{green}{\texttt{lemma\_main}}
+\textcolor{black}{$\{p : \mathbb{N}\}$}
+\textcolor{black}{\texttt{[}}\textcolor{black}{Fact} \textcolor{black}{\texttt{(}}\textcolor{black}{Nat.Prime} $\textcolor{black}{p}$\textcolor{black}{\texttt{)]}}
+\textcolor{black}{$(a\ b : \text{AlgebraicClosure}\ \mathbb{Q}_p)$} \\
+
+\textcolor{black}{\texttt{(}}%
+\textcolor{black}{$h : \forall x \in \text{AlgebraicClosure}\ \mathbb{Q}_p,\ a \neq x \wedge \text{IsConjRoot}\ \mathbb{Q}_p\ a\ x \rightarrow \text{PAdicNormExt}(b - a) < \text{PAdicNormExt}(x - a)$}%
+\textcolor{black}{\texttt{)}} \textcolor{purple}{\texttt{:}} \\
+
+\textcolor{blue}{$a \in \texttt{adjoin }$}$\mathbb{Q}$\textcolor{blue}{\texttt{\_p (\{b\} : Set (AlgebraicClosure }}$\mathbb{Q}$\textcolor{blue}{\texttt{\_p))}} \textcolor{purple}{\texttt{:=}}
+
+\vspace{1em}
+
+\begin{center}
+\begin{tabular}{|m{0.48\textwidth}|>{\centering\arraybackslash}m{0.45\textwidth}|}
+\hline
+\textbf{Lean} & \textbf{Explanation} \\
+\hline
+\begin{minipage}[t]{\linewidth}
+\texttt{have h1 : ∃ (c : AlgebraicClosure Q\_p), a ≠ c ∧ IsConjRoot K a c := conj\_lemma K a h0}
+\end{minipage}
+&
+\textit{\textcolor{red}{Get a Galois conj.}} \\
+\hline
+\begin{minipage}[t]{\linewidth}
+\texttt{have h2 : ∃ (σ : AlgebraicClosure Q\_p ≃ₐ[K] AlgebraicClosure Q\_p),} \\
+\texttt{\quad σ a = c ∧ ∀ x ∈ K, σ x = x := sigma\_isom K a c h\_conj\_in\_K}
+\end{minipage}
+&
+\textit{\textcolor{red}{Get an isom. from the conj.}} \\
+\hline
+\end{tabular}
+\end{center}
+
+\end{frame}
+
+\begin{frame}{Norm Invariance}
+
+\scriptsize
+\textcolor{red}{\texttt{have}} \textcolor{green}{\texttt{h4}} \textcolor{purple}{\texttt{:}} \textcolor{blue}{\texttt{PAdicNormExt (b - a) = PAdicNormExt (c - b)}} \textcolor{purple}{\texttt{:=}} calc
+
+\vspace{1em}
+
+\begin{center}
+\begin{tabular}{|m{0.6\textwidth}|>{\centering\arraybackslash}m{0.35\textwidth}|}
+\hline
+\texttt{PAdicNormExt (b - a) = PAdicNormExt (}$\sigma$\texttt{ (b - a)) := h\_norm\_inv} &
+\textit{\textcolor{red}{Norm invariance}} \\
+\hline
+\texttt{= PAdicNormExt (}$\sigma$\texttt{ b - }$\sigma$\texttt{ a) := Lin\_of\_sigma} &
+\textit{\textcolor{red}{Linearity}} \\
+\hline
+\texttt{= PAdicNormExt (b - }$\sigma$\texttt{ a) := by rw [sigma\_b]} &
+\textit{\textcolor{red}{b is fixed}} \\
+\hline
+\texttt{= PAdicNormExt (b - c) := by rw [h\_sigma1]} &
+\textit{\textcolor{red}{a is sent to c}} \\
+\hline
+\texttt{= PAdicNormExt (-(b - c)) := PAdicNormExt\_mult\_minus (b - c)} &
+\textit{\textcolor{red}{Norm inv -1}} \\
+\hline
+\texttt{= PAdicNormExt (c - b) := neg\_sub\_norm} &
+\textit{\textcolor{red}{Norm sym.}} \\
+\hline
+\end{tabular}
+\end{center}
+
+\end{frame}
+
+\begin{frame}{Contradiction Step}
+
+\scriptsize
+\textcolor{red}{\texttt{have}} \textcolor{green}{\texttt{h5}} \textcolor{purple}{\texttt{:}} \textcolor{blue}{\texttt{PAdicNormExt (c - a) < PAdicNormExt (c - a)}} \textcolor{purple}{\texttt{:=}} \texttt{calc}
+
+\vspace{1em}
+
+\begin{center}
+\begin{tabular}{|m{0.6\textwidth}|>{\centering\arraybackslash}m{0.35\textwidth}|}
+\hline
+\texttt{PAdicNormExt (c - a) = PAdicNormExt ((c - b) + (b - a)) := by rw [sub\_add\_sub\_cancel]} &
+\textit{\textcolor{red}{Add and subtract}} \\
+\hline
+$\_\leq\,$ \texttt{max (PAdicNormExt (c - b)) (PAdicNormExt (b - a)) := PAdicNormExt\_non\_arch (c - b) (b - a)} &
+\textit{\textcolor{red}{Non-arch triangle ineq.}} \\
+\hline
+\texttt{= PAdicNormExt (b - a) := max\_is\_b\_sub\_a} &
+\textit{\textcolor{red}{By h4}} \\
+\hline
+\texttt{< PAdicNormExt (c - a) := h c a\_c\_IsConj\_in\_Q\_p} &
+\textit{\textcolor{red}{Our assumption}} \\
+\hline
+\end{tabular}
+\end{center}
+
+\end{frame}
+\section{Key points}
+\begin{frame}{Implementation in Lean – Key Points and Takeaways}
+
+\begin{itemize}
+    \item Many parts of this were already implemented in Lean 3 (approx.\ 5000 lines of code), but the PR was never merged.
+    
+    \item \textbf{Intermediate fields:} Sometimes it's best to work under a much bigger field than you “need” to avoid complications from type mismatches and coercions.
+    
+    \item The norm extension over \(\mathbb{Q}_p\).
+\end{itemize}
+
+\end{frame}
+
+
+\end{document}
